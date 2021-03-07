@@ -1,0 +1,58 @@
+version: '3'
+
+services:
+  keycloak-postgres:
+    image: postgres:12
+    container_name: hazel-keycloack-postgres
+    restart: on-failure
+    volumes:
+      - keycloak_postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
+
+  app-postgres:
+    image: postgres:12
+    container_name: hazel-app-postgres
+    restart: on-failure
+    ports:
+    - 5432:5432
+    volumes:
+      - app_postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: hazel
+      POSTGRES_USER: hazel
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: hazel-mailhog
+    logging:
+      driver: 'none'  # disable saving logs
+    ports:
+      - 1025:1025 # smtp server
+      - 8025:8025 # web ui
+
+  keycloak:
+    image: jboss/keycloak:12.0.3
+    container_name: hazel-keycloack
+    restart: on-failure
+    environment:
+      DB_VENDOR: POSTGRES
+      DB_ADDR: keycloak-postgres
+      DB_DATABASE: keycloak
+      DB_USER: keycloak
+      DB_SCHEMA: public
+      DB_PASSWORD: password
+
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: admin
+    ports:
+      - 8080:8080
+    depends_on:
+      - keycloak-postgres
+
+volumes:
+  keycloak_postgres_data:
+  app_postgres_data:
